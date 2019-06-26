@@ -137,7 +137,7 @@ unsigned int warnIndex = 0;
 
 void warnBlinker() {
   if (warnIndex == 0 || warnIndex == 2) {
-    tone(4, 1000);
+    tone(4, 600);
   }
   else {
     noTone(4);
