@@ -67,10 +67,14 @@ void getButton() {
   }
 }
 
-unsigned int waitDly = 500;
+unsigned int waitDly = 10;
 
 void wait() {
-  strip.setPixelColor(3 - mode, 0, BLINKYELLOW, 0);
+  strip.setPixelColor(3 - mode, 0, 255, 255);
+  strip.setPixelColor(15 - mode, 0, 255, 255);
+  for(unsigned int s = 16; s < 24; s++){
+    strip.setPixelColor(s, 63, 0, 0);
+  }
   strip.show();
 }
 
