@@ -1,0 +1,14 @@
+[Unit]
+Description=PyCtrl service
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/pyctrl2.py
+NotifyAccess=main
+#WatchdogSec=10
+Restart=on-failure
+LimitNPROC=1
+ProtectHome=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

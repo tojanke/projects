@@ -8,8 +8,15 @@ GPIO.setup(14, GPIO.OUT)
 sensor = '/sys/bus/w1/devices/28-011453efb2aa/w1_slave'
 targetTemp = float(26.0)
 integralFactor = float(0.8)
-heatingTime = float(18.27)
 cycleTime = float(50)
+
+def readHeatingTime() :
+    with open("/home/pi/heating.temp", "r") as heatingFile: 
+        return float(heatingFile.read())    
+    
+def writeHeatingTime(heating) :
+    with open("/home/pi/heating.temp", "w") as heatingFile: 
+        heatingFile.write(str(heating))
 
 def readTempSensor(sensorName) :    
     f = open(sensorName, 'r')
@@ -32,20 +39,28 @@ def readTempLines(sensorName) :
 try:
     while True :
         currentTemp = float(readTempLines(sensor))
-        error = targetTemp - currentTemp        
+        error = targetTemp - currentTemp
+        heatingTime = readHeatingTime()
         heatingTime = heatingTime + (integralFactor * error)
         if heatingTime < 0 :
             heatingTime = 0
         if heatingTime > cycleTime :
             heatingTime = cycleTime
         coolingTime = cycleTime - heatingTime
-        with open("/home/pi/controller.log", "a") as logFile: 
-            logFile.write(str(time.time_ns()) + " temperature=" + str(currentTemp) + " heating=" + str(heatingTime) + "\n")
+        writeHeatingTime(heatingTime)        
         if heatingTime > 0 :
+            with open("/home/pi/controller.log", "a") as logFile: 
+                logFile.write(str(time.time_ns()) + " temperature=" + str(currentTemp) + " heating=" + str(heatingTime) + " state=0\n")
             GPIO.output(14, True)
-            time.sleep(heatingTime)
+            with open("/home/pi/controller.log", "a") as logFile: 
+                logFile.write(str(time.time_ns()) + " temperature=" + str(currentTemp) + " heating=" + str(heatingTime) + " state=1\n")
+            time.sleep(heatingTime)            
         if coolingTime > 0 :
+            with open("/home/pi/controller.log", "a") as logFile: 
+                logFile.write(str(time.time_ns()) + " temperature=" + str(currentTemp) + " heating=" + str(heatingTime) + " state=1\n")            
             GPIO.output(14, False)
+            with open("/home/pi/controller.log", "a") as logFile: 
+                logFile.write(str(time.time_ns()) + " temperature=" + str(currentTemp) + " heating=" + str(heatingTime) + " state=0\n")
             time.sleep(coolingTime)
 except KeyboardInterrupt:    
     print('Temperaturmessung wird beendet')

@@ -1,0 +1,14 @@
+[Unit]
+Description=InlfuxDB service
+
+[Service]
+ExecStart=/usr/bin/influxd
+NotifyAccess=main
+#WatchdogSec=10
+Restart=on-failure
+LimitNPROC=1
+ProtectHome=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

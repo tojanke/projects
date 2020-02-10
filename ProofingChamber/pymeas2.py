@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import time, sys, RPi.GPIO as GPIO
 
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(14, GPIO.OUT)
 sensor = '/sys/bus/w1/devices/28-011453efb2aa/w1_slave'
 
 def readTempSensor(sensorName) :    
