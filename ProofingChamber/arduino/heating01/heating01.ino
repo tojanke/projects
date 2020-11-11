@@ -15,8 +15,8 @@ DeviceAddress sensorDeviceAddress;
 
 float targetTemp = 26.0;
 float integralFactor;
-unsigned long cycleTime = 10000;
-unsigned long heatingTime;
+long cycleTime = 10000;
+long heatingTime;
 
 void pulse(int dur){
   digitalWrite(1, HIGH);  
@@ -37,15 +37,16 @@ void debugOut(float data){
   }  
 }
 
-void heat(unsigned long dur){
+void heat(unsigned long durh, unsigned long durc){
   digitalWrite(4, HIGH);
-  delay(dur);
+  delay(durh);
   digitalWrite(4, LOW);
+  delay(durc);
 }
 
 void setup(){
   heatingTime = cycleTime/6.0; 
-  integralFactor = cycleTime * 0.025;
+  integralFactor = cycleTime / 100.0;
   pinMode(1, OUTPUT);
   pinMode(4, OUTPUT);
   sensors.begin();
@@ -54,14 +55,26 @@ void setup(){
 }
 
 
-void loop(){
-  debugOut(2);
+void loop(){  
   sensors.requestTemperatures();  
 
   float currentTemp = sensors.getTempCByIndex(SENSOR_INDEX);    
   float error = targetTemp - currentTemp; 
   float addit =  integralFactor * error;
+  
   heatingTime = heatingTime + addit;  
+
+  if(error < -0.5){
+    debugOut(1);
+  }
+  else if(error > -0.5 && error < 0.5){
+    debugOut(2);
+  }
+  else if(error > 0.5){
+    debugOut(3);
+  }  
+  delay(1000);
+  debugOut(error< 0 ? -1*error : error);
 
   if (heatingTime < 0.0){
     heatingTime = 0.0;
@@ -70,10 +83,10 @@ void loop(){
     heatingTime = cycleTime;    
   }  
   
-  if(heatingTime > 0){
-    //debugOut(heatingTime/1000.0);
-    heat(heatingTime);
+  if(heatingTime > 0){    
+    heat(heatingTime, cycleTime - heatingTime);
+  }  
+  else {
+    delay(cycleTime);
   }
-  debugOut(3);
-  delay(cycleTime - heatingTime);
 }
