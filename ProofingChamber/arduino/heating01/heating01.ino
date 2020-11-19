@@ -25,6 +25,13 @@ void pulse(int dur){
   delay(dur*80);
 }
 
+void beep(int dur){  
+    tone(2,440);
+    delay(dur*80);
+    noTone(2);
+    delay(dur*80);
+}
+
 void debugOut(float data){
   float out = data;
   while(out >= 10){
@@ -37,6 +44,22 @@ void debugOut(float data){
   }  
 }
 
+void beepOut(float data){
+  float out = data;
+  while(out >= 10){
+    beep(3);
+    out = out - 10.0;
+  }
+  while(out >= 1){
+    beep(2);
+    out = out - 1.0;
+  }  
+  while(out >= 0.1){
+    beep(1);
+    out = out - 0.1;
+  }  
+}
+
 void heat(unsigned long durh, unsigned long durc){
   digitalWrite(4, HIGH);
   delay(durh);
@@ -44,14 +67,40 @@ void heat(unsigned long durh, unsigned long durc){
   delay(durc);
 }
 
+void checkSensors(){
+  delay(1000);
+  sensors.requestTemperatures();  
+  float currentTemp = sensors.getTempCByIndex(SENSOR_INDEX);    
+  if(currentTemp < 10){
+    beepOut(0.2);
+    delay(1000);
+    beepOut(currentTemp);
+    delay(2000);
+    checkSensors();
+  }
+  else if(currentTemp > 40){
+    beepOut(0.3);
+    delay(1000);
+    beepOut(currentTemp);
+    delay(2000);
+    checkSensors();
+  }
+  else {
+    beepOut(0.1);
+  }  
+}
+
 void setup(){
+  beepOut(0.1);
   heatingTime = cycleTime/6.0; 
   integralFactor = cycleTime / 100.0;
   pinMode(1, OUTPUT);
+  pinMode(2, OUTPUT);
   pinMode(4, OUTPUT);
   sensors.begin();
   sensors.getAddress(sensorDeviceAddress, 0);
-  sensors.setResolution(sensorDeviceAddress, SENSOR_RESOLUTION);
+  sensors.setResolution(sensorDeviceAddress, SENSOR_RESOLUTION);  
+  checkSensors();
 }
 
 
