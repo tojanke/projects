@@ -2,7 +2,7 @@
 Description=PyCtrl service
 
 [Service]
-ExecStart=/usr/bin/python3 /home/pi/pyctrl2.py
+ExecStart=/usr/bin/python3 /home/pi/pyctrl3.py
 NotifyAccess=main
 #WatchdogSec=10
 Restart=on-failure
