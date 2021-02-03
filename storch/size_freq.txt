@@ -1,0 +1,10 @@
+Größe 	5616
+	
+Frequenz Minuten	15
+Minuten Total	1440
+	
+Frames	96
+Größe	539.136
+	
+	
+Full Frame	832.619
