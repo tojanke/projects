@@ -32,8 +32,9 @@ CREATE TABLE `vidrequests` (
 CREATE TABLE `videos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `requestID` int(11) NOT NULL,
-  `data` longblob NOT NULL,
+  `path` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `request_id` (`requestID`),
   CONSTRAINT `request_id` FOREIGN KEY (`requestID`) REFERENCES `vidrequests` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+
