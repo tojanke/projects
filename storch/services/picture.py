@@ -7,6 +7,9 @@ from PIL import Image
 from timeloop import Timeloop
 from datetime import timedelta
 
+# Change to loop with separate triggers for timelapse and web images
+
+
 tl = Timeloop()
 
 @tl.job(interval=timedelta(minutes=15))
