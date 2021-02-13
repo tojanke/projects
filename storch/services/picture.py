@@ -45,7 +45,7 @@ def takeImage():
     mycursor.execute(sql, sqlvalues)
     mydb.commit()
 
-    if(pictureCounter > thumbFrequency):
+    if(pictureCounter >= thumbFrequency):
         pictureCounter = 0
         originalImage.thumbnail((192,144))
         thumbStream = io.BytesIO()
