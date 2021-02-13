@@ -7,8 +7,8 @@ from PIL import Image
 from timeloop import Timeloop
 from datetime import timedelta
 
-nextPictureTime = 0
-nextConfUpdate = 0
+nextPictureTime = time.time()
+nextConfUpdate = time.time()
 pictureCounter = 0
 pictureQuality = 50
 thumbFrequency = 15
@@ -19,8 +19,7 @@ mydb = mysql.connector.connect(host="localhost", user="service", password="storc
 mycursor = mydb.cursor()
 
 def updateConfig():
-    global nextConfUpdate, pictureQuality, thumbFrequency, timelapseFrequency, configFrequency    
-    nextConfUpdate = time.time()
+    global nextConfUpdate, pictureQuality, thumbFrequency, timelapseFrequency, configFrequency        
 
     mycursor.execute("SELECT confvalue FROM config WHERE confkey = 'picture-quality'")
     pictureQuality = int(mycursor.fetchone()[0])
@@ -40,7 +39,6 @@ def updateConfig():
 
 def takeImage():
     global nextPictureTime, pictureCounter, pictureQuality, thumbFrequency, timelapseFrequency   
-    nextPictureTime = time.time()
     pictureCounter = pictureCounter + 1
     
     picStream = io.BytesIO()
