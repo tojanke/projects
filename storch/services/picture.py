@@ -9,7 +9,7 @@ from datetime import timedelta
 
 nextPictureTime = time.time()
 nextConfUpdate = time.time()
-pictureCounter = 0
+pictureCounter = 50
 pictureQuality = 50
 thumbFrequency = 15
 timelapseFrequency = 60
@@ -39,7 +39,7 @@ def updateConfig():
 
 def takeImage():
     global nextPictureTime, pictureCounter, pictureQuality, thumbFrequency, timelapseFrequency   
-    pictureCounter = pictureCounter + 1
+    pictureCounter = pictureCounter + 1    
     
     picStream = io.BytesIO()
     with picamera.PiCamera() as camera:
