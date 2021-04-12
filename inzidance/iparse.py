@@ -1,5 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
+from influxdb import InfluxDBClient
+import time
 
 URL = 'https://www.apps.nlga.niedersachsen.de/corona/iframe.php'
 page = requests.get(URL)
@@ -23,4 +25,16 @@ firstClosing = inzTd.find('>')
 nextStarting = inzTd.find('<',firstClosing)
 
 inzidenz = float((inzTd[firstClosing+1:nextStarting]).replace(',','.'))
-print(inzidenz)
+
+client = InfluxDBClient(host='localhost', port=8086, username='user',password='pass', database='db')
+
+json_body = [
+    {
+        "measurement": "inzidenzLeer",        
+        "time": int(time.time() * 1000000000),
+        "fields": {            
+            "inzidenz": inzidenz
+        }
+    }
+]
+client.write_points(json_body)
