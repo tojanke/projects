@@ -1,3 +1,4 @@
+from sys import exit
 from machine import Pin
 from time import sleep, ticks_ms, ticks_diff
 from gpio_lcd import GpioLcd
@@ -13,6 +14,7 @@ row_pins = [Pin(pin_name, mode=Pin.OUT) for pin_name in rows]
 col_pins = [Pin(pin_name, mode=Pin.IN, pull=Pin.PULL_DOWN) for pin_name in cols]
 
 heating_pin=Pin(1, mode=Pin.OUT)
+status_led=Pin(25, mode=Pin.OUT)
 
 temp_pin=Pin(28)
 temp_sensor = DS18X20(OneWire(temp_pin))
@@ -62,6 +64,7 @@ def init_sensor():
     global temp_source
     sensors = temp_sensor.scan()
     if len(sensors)!=1:
+        status_led.high()
         exit(1)
     temp_source = sensors[0]
     
@@ -174,7 +177,9 @@ def waitForInput(waitTime):
     global skip
     start = ticks_ms()
     wait_ms = waitTime * 1000    
-    while ticks_diff(ticks_ms(), start) < wait_ms and not skip:        
+    while ticks_diff(ticks_ms(), start) < wait_ms and not skip:
+        sleep(0.25)
+        status_led.toggle()
         digit = getKeyPressed()
         if digit=="A":
             changeTargetPressed()
@@ -195,6 +200,7 @@ def waitForInput(waitTime):
             init_lcd()
             skip = True
             setLCD("...")
+               
     
 def init():
     init_keypad()
@@ -203,6 +209,7 @@ def init():
     
 def loop():
     global heatingTime
+    global skip
     while True:        
         skip = False
         current_temp = get_temp()
@@ -223,3 +230,4 @@ def loop():
     
 init()
 loop()
+
