@@ -1,0 +1,171 @@
+<html>
+
+<head>
+    <title>Abenteuer-Rad</title>
+    <link rel="stylesheet" href="main.css" type="text/css" />
+    <script type="text/javascript" src="Winwheel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div align="center">
+
+        <br />
+        <table cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td>
+                    <div class="power_controls">
+                        <img id="spin_button" src="drehen.png" alt="Spin" onClick="startSpin();" />
+                    </div>
+                </td>
+                <td width="438" height="582" class="the_wheel" align="center" valign="center">
+                    <canvas id="canvas" width="438" height="438"></canvas>
+                </td>
+                <td>
+                    <div class="results">
+                        <h3 id="result"></h3>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <script>
+        var dict = {};
+
+        dict["WASISTMIT"] = [
+            'Verlassen des Geländes',
+            'Ersatz-Zeug zum Ausleihen',
+            'Streit',
+            'Handys',
+            'Sammelzeichen',
+            'Wasserschlacht',
+            'Auszeiten',
+            'Regeln'
+        ];
+
+        dict["WIEUNDWO"] = [
+            'Duschen',
+            'Abfall, Essensreste',
+            'Rauchen',
+            'Schlüssel',
+            'Spielgeräte',
+            'Zelte',
+            'Wohnwagen',
+            'Schwimmen'
+        ];
+
+        dict["TAGESABLAUF"] = [
+            'Abendabschluss',
+            'Besprechungen',
+            'Mahlzeiten',
+            'Nachtruhe',
+            'Nachtwache',
+            'Workshops',
+            'Wecken',
+            'freie Zeit'
+        ];
+
+        dict["EREIGNISKARTE"] = [
+            'Ein starker Sturm zieht auf, die ersten Sachen fliegen durch die Gegend',
+            'Beim Wecken der Kinder fällt auf, dass das Zelt eine undichte Stelle hat. Gepäck, Schuhe und Schlafsäcke sind nass geworden.',
+            'Du wirst mitten in der Nacht davon geweckt, dass mehrere Kinder auf dem Platz sind und Lärm machen.',
+            'Eine unbekannte Person sitzt am Lagerfeuer.',
+            'Ein Kind berichtet dir, dass ein anderes gerade im Streit weggelaufen ist.',
+            'Ein Funke vom Lagerfeuer fliegt bis zu einem Zelt, das anfängt zu brennen.',
+            'Ein Kind verletzt sich so schwer, dass ein Rettungswagen gerufen werden muss.',
+            'Ein Spiel muss wegen starkem Regen abgebrochen werden'
+        ];
+
+        dict["WERMACHTS"] = [
+            'Moderation',
+            'Fotos',
+            'Konsequenzen',
+            'Auf-/Abbau',
+            'Abwasch',
+            'Putzen',
+            'Aufräumen',
+            'Aufsicht'
+        ];
+
+        let theWheel = new Winwheel({
+            'numSegments': 5,
+            'outerRadius': 212,
+            'drawMode': 'image',
+            'segments': [{
+                'fillStyle': '#eae56f',
+                'text': 'WASISTMIT'
+            }, {
+                'fillStyle': '#89f26e',
+                'text': 'WIEUNDWO'
+            }, {
+                'fillStyle': '#7de6ef',
+                'text': 'TAGESABLAUF'
+            }, {
+                'fillStyle': '#e7706f',
+                'text': 'EREIGNISKARTE'
+            }, {
+                'fillStyle': '#eae56f',
+                'text': 'WERMACHTS'
+            }],
+            'animation': {
+                'type': 'spinToStop',
+                'duration': 8,
+                'spins': 4,
+                'callbackFinished': alertPrize,
+                'callbackSound': playSound,
+                'soundTrigger': 'pin'
+            },
+            'pins': {
+                'number': 10
+            }
+        });
+
+        let loadedImg = new Image();
+        loadedImg.onload = function() {
+            theWheel.wheelImage = loadedImg;
+            theWheel.draw();
+        }
+        loadedImg.src = "wheel.png";
+
+        let audio = new Audio('tick.mp3');
+        let winAudio = new Audio('tada.mp3');
+
+        function playSound() {
+            // Stop and rewind the sound if it already happens to be playing.
+            audio.pause();
+            audio.currentTime = 0;
+
+            // Play the sound.
+            audio.play();
+        }
+
+        function alertPrize(indicatedSegment) {
+            if (dict[indicatedSegment.text].length == 0) {
+                startSpin();
+            } else {
+                let rand = Math.floor(Math.random() * dict[indicatedSegment.text].length);
+                document.getElementById("result").innerHTML = dict[indicatedSegment.text][rand];
+                dict[indicatedSegment.text].splice(rand, 1)
+                winAudio.pause();
+                winAudio.currentTime = 0;
+                winAudio.play();
+            }
+        }
+
+        function startSpin() {
+            theWheel.stopAnimation(false);
+            theWheel.rotationAngle = 0;
+            theWheel.animation.spins = Math.floor(Math.random() * 6 + 3);
+            theWheel.startAnimation();
+        }
+    </script>
+</body>
+
+</html>
