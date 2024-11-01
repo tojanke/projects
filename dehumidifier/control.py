@@ -1,3 +1,5 @@
+from http.client import RemoteDisconnected
+
 from gpiozero import Button, OutputDevice
 import RPi.GPIO as GPIO
 from dht11 import DHT11
@@ -20,7 +22,6 @@ w1_base_dir = '/sys/bus/w1/devices/'
 temp_sensor_folder = glob.glob(w1_base_dir + '28*')[0]
 temp_sensor_file = temp_sensor_folder + '/w1_slave'
 
-GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
 
 button = Button(17)
@@ -30,6 +31,7 @@ fan = OutputDevice(14)
 compressor = OutputDevice(15)
 pump = OutputDevice(18)
 
+target_humidity = 55
 
 def readTempSensor():
     f = open(temp_sensor_file, 'r')
@@ -37,9 +39,7 @@ def readTempSensor():
     f.close()
     return lines
 
-
 cooler_temp = 20
-
 
 def getCoolerTemperature():
     global cooler_temp
@@ -55,22 +55,19 @@ def getCoolerTemperature():
         if tempCelsius != 85.0:
             cooler_temp = tempCelsius
 
-
 humidity = float(60.0)
 air_temp = float(20.0)
-
 
 def getHumidityAndAirTemperature():
     global humidity, air_temp
     result = humidity_sensor.read()
     tries = 0
-    while not result.is_valid() and tries < 5:
-        time.sleep(0.2)
+    while not result.is_valid() and tries < 10:
+        time.sleep(2)
         result = humidity_sensor.read()
         tries += 1
-    if tries < 5:
+    if result.is_valid():
         humidity, air_temp = result.humidity, result.temperature
-
 
 run_pump_until = 0
 compressor_cooldown_until = 0
@@ -78,41 +75,48 @@ compressor_cooldown_until = 0
 tank_capacity = 10000.0
 pump_ml_per_second = 12.5
 pump_cycle = 500.0
-pump_cycle_duration = pump_cycle / pump_ml_per_second
 
-pumps_remaining = 0.0
+pumped = 0.0
 next_influx_write = 0
 
 next_measurement = 0
 
-
-def updateFunction():
+def measurementFunction():
     global next_measurement, next_influx_write
     while True:
         now = time.time()
-
         if next_measurement < now:
             getCoolerTemperature()
             getHumidityAndAirTemperature()
             next_measurement = now + 30
+
+measurementThread = Thread(target=measurementFunction)
+measurementThread.start()
+
+def reportFunction():
+    global next_influx_write
+    while True:
+        now = time.time()
         if next_influx_write < now:
             point = (
                 Point("dehumidifier")
                 .field("cooler_temp", float(cooler_temp))
                 .field("humidity", float(humidity))
                 .field("air_temp", float(air_temp))
-                .field("pumps_remaining", int(pumps_remaining))
+                .field("pumped", int(pumped))
                 .field("compressor_on", compressor.is_active)
                 .field("fan_on", fan.is_active)
                 .field("pump_on", pump.is_active)
                 .field("water_sw", water_switch.is_active)
             )
-            influx_api.write(bucket="tojanke", org="tojanke", record=point)
-            next_influx_write = now + 60
+            try:
+                influx_api.write(bucket="tojanke", org="tojanke", record=point)
+            except RemoteDisconnected:
+                print("Network problems")
+            next_influx_write = now + 20
 
-
-updateThread = Thread(target=updateFunction)
-updateThread.start()
+reportThread = Thread(target=reportFunction)
+reportThread.start()
 
 while True:
     now = time.time()
@@ -120,8 +124,8 @@ while True:
     if not 1 < cooler_temp < 60 and compressor.is_active:
         print("Compressor off, temperature is " + str(cooler_temp))
         compressor.off()
-        compressor_cooldown_until = now + 60
-    elif humidity < 55 and compressor.is_active:
+        compressor_cooldown_until = now + 600
+    elif humidity < target_humidity and compressor.is_active:
         print("Humidity low, stopping compressor")
         compressor.off()
         compressor_cooldown_until = now + 900
@@ -133,23 +137,24 @@ while True:
         print("Starting Compressor")
         compressor.on()
 
-    if humidity > 55 and not fan.is_active:
+    if humidity > target_humidity and not fan.is_active:
         print("Starting Fan")
         fan.on()
-    elif humidity < 55 and fan.is_active:
+    elif (humidity < target_humidity or not water_switch.is_active) and fan.is_active:
         print("Stopping Fan")
         fan.off()
 
     if run_pump_until < now and pump.is_active:
         print("Stopping Pump")
         pump.off()
-    elif not water_switch.is_active and pumps_remaining > 0 and not pump.is_active:
+    elif not water_switch.is_active and pumped < tank_capacity and not pump.is_active:
         print("Starting Pump")
         pump.on()
-        run_pump_until = now + pump_cycle_duration
-        pumps_remaining -= 1
+        cycle = min(pump_cycle, tank_capacity - pumped)
+        run_pump_until = now + cycle / pump_ml_per_second
+        pumped += cycle
 
-    if button.is_active and pumps_remaining < 1:
+    if button.is_active:
         print("Resetting pumps")
-        pumps_remaining = tank_capacity / pump_cycle
+        pumped = 0
         time.sleep(2)
